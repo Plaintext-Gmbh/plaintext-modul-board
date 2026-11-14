@@ -1,0 +1,8 @@
+defaultLabel;languageCode;translatedText
+# plaintext-modul-board (Karte 2193): Schluessel = deutscher Text wie in i18n.t('...'). Kein Semikolon in Texten.
+Board;en;Board
+Board;fr;Tableau
+Board;it;Bacheca
+Karte;en;Card
+Karte;fr;Carte
+Karte;it;Scheda

@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Modul-Repo nach Karte 1599 (Vorlage plaintext-modul-zeiterfassung). Karte 2193: Board/Kanban
+         ersetzt das Nextcloud-Deck (Plaintext-Backlog). Parent = root-v2. -->
+    <parent>
+        <groupId>ch.plaintext.v2</groupId>
+        <artifactId>plaintext-root-parent</artifactId>
+        <version>3.32.0</version>
+        <relativePath/>
+    </parent>
+
+    <!-- groupId ch.plaintext: Vorgabe des Laders (ModulKonfig.STANDARD_GRUPPE) und der Registry. -->
+    <groupId>ch.plaintext</groupId>
+    <artifactId>plaintext-modul-board-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>plaintext-modul-board-parent</name>
+    <description>Modul-Repo plaintext-modul-board (Karte 2193, Kanban-Board ersetzt Nextcloud-Deck)</description>
+    <url>https://github.com/Plaintext-Gmbh/plaintext-modul-board</url>
+
+    <licenses>
+        <license>
+            <name>MPL-2.0</name>
+            <url>https://mozilla.org/MPL/2.0/</url>
+        </license>
+    </licenses>
+
+    <properties>
+        <!-- PFLICHT, gleich der Parent-Version: der root-Parent setzt sie sonst auf project.version. -->
+        <plaintext-root.version>3.32.0</plaintext-root.version>
+    </properties>
+
+    <!-- Karte 1604: die geteilten Architektur-Tests laufen in jedem Modul dieses Repos. -->
+    <dependencies>
+        <dependency>
+            <groupId>ch.plaintext.v2</groupId>
+            <artifactId>plaintext-root-archtests</artifactId>
+            <version>${plaintext-root.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <modules>
+        <module>plaintext-z-board</module>
+    </modules>
+
+    <repositories>
+        <!-- Reposilite (LAN): root-v2-Artefakte und die eigenen Releases. -->
+        <repository>
+            <id>plaintext-nas</id>
+            <url>https://maven.plaintext.ch/releases</url>
+        </repository>
+    </repositories>
+
+    <!-- Releases nur nach Reposilite, kein GitHub Packages (der Lader holt nur von dort und Central). -->
+    <distributionManagement>
+        <repository>
+            <id>plaintext-nas</id>
+            <url>https://maven.plaintext.ch/releases</url>
+        </repository>
+    </distributionManagement>
+
+    <build>
+        <plugins>
+            <!-- Karte 1610: Huellen-Regel (ci/huellen-regel.groovy) in jedem Modul: root-BOM-verwaltet => provided,
+                 eigene Bibliotheken ohne Klassen der Huelle. Rot bricht den Bau in validate ab. -->
+            <plugin>
+                <groupId>org.codehaus.gmavenplus</groupId>
+                <artifactId>gmavenplus-plugin</artifactId>
+                <version>5.1.0</version>
+                <executions>
+                    <execution>
+                        <id>huellen-regel</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <scripts>
+                                <script>${maven.multiModuleProjectDirectory}/ci/huellen-regel.groovy</script>
+                            </scripts>
+                        </configuration>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.groovy</groupId>
+                        <artifactId>groovy</artifactId>
+                        <version>5.0.8</version>
+                        <scope>runtime</scope>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <!-- Quell-Jar (-sources.jar) fuer jedes Modul, Karte 1606. Bei packaging pom tut das Plugin nichts. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>quell-jar</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <!-- Mockito-Inline-Agent auf JDK 25 (wie plaintext-app). -->
+                        <argLine>@{argLine} -XX:+EnableDynamicAgentLoading -Xshare:off</argLine>
+                        <!-- Karte 1604: root-archtests gegen dieses Repo laufen lassen. -->
+                        <dependenciesToScan>
+                            <dependency>ch.plaintext.v2:plaintext-root-archtests</dependency>
+                        </dependenciesToScan>
+                        <systemPropertyVariables>
+                            <!-- Modul-Repo: Untergrenzen 1. -->
+                            <plaintext.archtests.modul-repo>true</plaintext.archtests.modul-repo>
+                        </systemPropertyVariables>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>

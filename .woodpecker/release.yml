@@ -1,0 +1,27 @@
+# Release per Git-Tag X.Y.Z nach Reposilite (Karte 2193, Muster plaintext-modul-zeiterfassung).
+# Ablauf und Pruefungen: ci/release.sh. Danach signiert ci/registry.sh die Module und legt sie
+# in die Nextcloud-Registry (Karte 1612).
+# Secrets, alle NUR fuer das Ereignis tag (kein PR-Lauf sieht sie): maven_nas_token (Server-Id plaintext-nas),
+# modul_signatur_ed25519 und modul_registry_schreiben (je nur im Schritt registry).
+# Kein GitHub Packages, kein Tag-Push aus der CI.
+when:
+  - event: tag
+
+steps:
+  release:
+    image: maven:3.10-eclipse-temurin-25
+    environment:
+      MAVEN_NAS_TOKEN:
+        from_secret: maven_nas_token
+    commands:
+      - bash ci/release.sh
+
+  registry:
+    image: maven:3.10-eclipse-temurin-25
+    environment:
+      MODUL_SIGNATUR_ED25519:
+        from_secret: modul_signatur_ed25519
+      MODUL_REGISTRY_SCHREIBEN:
+        from_secret: modul_registry_schreiben
+    commands:
+      - bash ci/registry.sh

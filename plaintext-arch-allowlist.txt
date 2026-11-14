@@ -1,0 +1,2 @@
+# Karte 1601 (Welle C, Schritt 12): wortgleich aus plaintext-app/plaintext-arch-allowlist.txt (Modul umgezogen, Muster kalenderhost).
+# Format und Pruefung: ArchAllowlist in plaintext-root-archtests.

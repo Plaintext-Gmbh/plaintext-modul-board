@@ -1,0 +1,31 @@
+# Test profile (Muster plaintext-modul-zeiterfassung): create-drop statt Flyway.
+
+spring:
+  main:
+    allow-circular-references: true
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: false
+
+logging:
+  level:
+    root: INFO
+    ch.plaintext: DEBUG
+
+plaintext:
+  menu:
+    scan-package: ch.plaintext

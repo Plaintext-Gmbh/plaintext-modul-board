@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>ch.plaintext</groupId>
+        <artifactId>plaintext-modul-board-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>plaintext-modul-board</artifactId>
+    <name>plaintext-modul-board</name>
+    <description>Kanban-Board (Boards, Stapel, Karten, Labels, Kommentare) mit Deck-kompatibler REST-API,
+        Karte 2193: ersetzt das Nextcloud-Deck des Plaintext-Backlogs</description>
+
+    <!-- Karte 2193: alles, was die root-BOM (Huelle) verwaltet, ist provided — die App liefert es.
+         plaintext-admin-apitoken validiert die Bearer-Tokens der REST-API; spring-data-jpa fuer die
+         Boards-Tabellen; MCP-Starter fuer die Werkzeuge der Agenten. -->
+    <dependencies>
+        <dependency>
+            <groupId>ch.plaintext.v2</groupId>
+            <artifactId>plaintext-root-webapp</artifactId>
+            <version>${plaintext-root.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.plaintext.v2</groupId>
+            <artifactId>plaintext-admin-apitoken</artifactId>
+            <version>${plaintext-root.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- Huellen-Regel (Karte 1610): ueber admin-apitoken kaemen jackson/jjwt als runtime mit —
+             die Huelle liefert sie, deshalb provided (Muster plaintext-modul-kontakte). -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
+            <version>2.0.2</version>
+            <!-- wie zeiterfassung (1609): die Huelle bringt den MCP-Server mit. -->
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- REST-Tests der Deck-kompatiblen API (Muster plaintext-modul-zeiterfassung). -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>6.3.0</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

@@ -1,0 +1,4 @@
+# Karte 1612: OEFFENTLICHER Signatur-Schluessel der Modul-Registry (gleich config/module-quellen.txt auf demo).
+# ci/registry.sh prueft damit nach dem Hochladen. Der private liegt nur im Vault (module.signatur-ed25519) und als
+# Woodpecker-Secret modul_signatur_ed25519 (nur Ereignis tag). Fingerabdruck (sha256 des DER) 0ba9c239825021f1...
+schluessel ed25519 MCowBQYDK2VwAyEAvrcEM0md5XzumBYvUSOMACnoMc7Ug9J+Y10DHHU/A3Q=

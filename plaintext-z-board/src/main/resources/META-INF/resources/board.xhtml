@@ -1,0 +1,25 @@
+<ui:composition xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns="http://www.w3.org/1999/xhtml"
+                template="/includes/template.xhtml">
+    <!-- Karte 2193: Kanban-Board. Phase 4 (Kanban-UI) ersetzt diese Minimalversion durch die
+         vollstaendige Ansicht mit Drag and Drop zwischen den Stapeln. -->
+
+    <f:metadata>
+        <f:viewAction action="#{boardBean.laden}"/>
+    </f:metadata>
+
+    <ui:define name="title">#{i18n.t('Board')}</ui:define>
+
+    <ui:define name="content">
+        <h:form id="bf">
+            <p:dataTable id="tbl" var="karte" value="#{boardBean.karten}">
+                <p:column headerText="#{i18n.t('Karte')}">
+                    <h:outputText value="##{karte.id} #{karte.title}"/>
+                </p:column>
+            </p:dataTable>
+        </h:form>
+    </ui:define>
+</ui:composition>
