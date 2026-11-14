@@ -45,6 +45,7 @@ import java.util.function.Supplier;
 public class BoardDeckController {
 
     private final BoardDeckService service;
+    private final BoardImportService importService;
     private final ApiTokenValidatorService apiTokenValidatorService;
 
     // ── Boards und Stapel ──────────────────────────────────
@@ -152,6 +153,32 @@ public class BoardDeckController {
                                          HttpServletRequest request) {
         return aufruf(auth, request, m -> ResponseEntity.status(HttpStatus.CREATED)
                 .body(service.createLabel(bid, (String) body.get("title"), (String) body.get("color"), m)));
+    }
+
+    // ── Migration (Import aus dem Nextcloud-Deck, Karte 2193 Phase 2) ──
+
+    /**
+     * Importiert eine Karte mit fester Id aus dem Nextcloud-Deck (idempotent, nur fuer die
+     * Migration — die Karten-Ids bleiben 1:1 erhalten, weil Agenten und Memories auf Nummern
+     * verweisen). Nicht im Deck-Skript genutzt.
+     */
+    @PostMapping("/boards/{bid}/import/cards")
+    public ResponseEntity<?> importCard(@PathVariable long bid, @RequestBody BoardDeckJson.CardImportJson karte,
+                                        @RequestHeader(value = "Authorization", required = false) String auth,
+                                        HttpServletRequest request) {
+        return aufruf(auth, request, m -> {
+            IApiTokenService.ApiTokenValidationResult v = token(auth, request);
+            int kommentare = importService.importCard(bid, karte, m, v.email());
+            return ResponseEntity.ok(Map.of("id", karte.id, "kommentare", kommentare));
+        });
+    }
+
+    @PostMapping("/boards")
+    public ResponseEntity<?> createBoard(@RequestBody Map<String, Object> body,
+                                         @RequestHeader(value = "Authorization", required = false) String auth,
+                                         HttpServletRequest request) {
+        return aufruf(auth, request, m -> ResponseEntity.status(HttpStatus.CREATED)
+                .body(service.createBoard((String) body.get("title"), m)));
     }
 
     // ── Verschieben und Kommentare (Pfade wie im Deck-Skript) ──

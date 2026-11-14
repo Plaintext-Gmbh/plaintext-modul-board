@@ -77,6 +77,13 @@ public class BoardDeckService {
     // ── Schreiben ──────────────────────────────────────────
 
     @Transactional
+    public BoardDeckJson.BoardJson createBoard(String title, String mandat) {
+        Board b = new Board();
+        b.setTitle(title);
+        return BoardDeckJson.BoardJson.of(boardRepository.save(b));
+    }
+
+    @Transactional
     public StackJson createStack(long boardId, String title, String mandat) {
         Board b = board(boardId, mandat, true);
         int naechste = stackRepository.findByBoardId(b.getId()).stream().mapToInt(BoardStack::getSortIndex).max().orElse(-1) + 1;

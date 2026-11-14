@@ -106,4 +106,32 @@ public final class BoardDeckJson {
             return j;
         }
     }
+
+    /** Label-Referenz im Import: Titel (Schluessel) plus Farbe beim Neuanlegen. */
+    public static class LabelRefJson {
+        public String title;
+        public String color;
+    }
+
+    /** Kommentar im Import: ohne Id (neue Ids), mit urspruenglichem Zeitstempel. */
+    public static class CommentImportJson {
+        public String message;
+        public String actorId;
+        public String actorDisplayName;
+        public String createdDate;
+    }
+
+    /** Eine Karte im Import aus dem Nextcloud-Deck: feste Id, Labels je Titel, Kommentare. */
+    public static class CardImportJson {
+        public long id;
+        public long stackId;
+        public String title;
+        public String description;
+        public int order;
+        public String duedate;
+        public boolean archived;
+        public String createdDate;
+        public List<LabelRefJson> labels = new ArrayList<>();
+        public List<CommentImportJson> comments = new ArrayList<>();
+    }
 }
