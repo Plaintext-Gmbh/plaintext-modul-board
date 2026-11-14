@@ -1,6 +1,7 @@
 # Bau und Tests (Karte 2193). Laeuft im LAN-Runner, weil maven.plaintext.ch nur dort erreichbar ist.
 # Keine Secrets: Lesen aus Reposilite braucht keine Anmeldung.
-# PostgreSQL als Service: die Integrationstests erwarten localhost:5434 (Muster plaintext-config/plaintext-root/compose.yaml).
+# PostgreSQL als Service: die Integrationstests erwarten DB_HOST/DB_PORT (Vorgabe plaintext-config/plaintext-root/compose.yaml,
+# lokaler Standard localhost:5434). Im Runner-Pod ist der Dienst unter seinem Namen erreichbar — nicht localhost.
 when:
   - event: pull_request
   - event: push
@@ -18,6 +19,10 @@ services:
 steps:
   bauen:
     image: maven:3.10-eclipse-temurin-25
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
     commands:
+      - until bash -c '</dev/tcp/postgres/5432' 2>/dev/null; do sleep 1; done
       - mvn -B -Dmaven.build.cache.enabled=false clean verify
       - bash -n ci/release.sh && bash -n ci/registry.sh
