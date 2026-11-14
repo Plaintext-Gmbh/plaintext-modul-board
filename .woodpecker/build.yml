@@ -10,5 +10,10 @@ steps:
   bauen:
     image: maven:3.10-eclipse-temurin-25
     commands:
-      - mvn -B -Dmaven.build.cache.enabled=false clean verify
+      # TEMPORAER (Diagnose CI-Rot): Surefire-Auszug bei Fehlschlag, wird nach der Ursachenfindung wieder entfernt.
+      - |
+        mvn -B -Dmaven.build.cache.enabled=false clean verify || {
+          for f in $(find . -path "*/surefire-reports/*.txt"); do echo "===== $f"; tail -50 "$f"; done
+          exit 1
+        }
       - bash -n ci/release.sh && bash -n ci/registry.sh
