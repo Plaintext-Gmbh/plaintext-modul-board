@@ -169,16 +169,20 @@ class BoardBeanTest {
     }
 
     @Test
-    void karteAnlegen_leererTitelWirdIgnoriert() {
-        bean.karteAnlegen(1L);
-        verify(service, never()).createCard(anyLong(), anyString(), any(), any(), any(), anyString());
+    void detailSpeichernImNeumodus_legtKarteAn() {
+        bean.laden();
+        bean.neuOeffnen(1L);
+        bean.setDetailTitel(" Neue Karte ");
+        bean.detailSpeichern();
+        verify(service).createCard(1L, "Neue Karte", null, null, null, "m1");
     }
 
     @Test
-    void karteAnlegen_delegiertUndLaedtNeu() {
-        bean.getNeuerTitel().put(1L, " Neue Karte ");
-        bean.karteAnlegen(1L);
-        verify(service).createCard(1L, "Neue Karte", null, null, null, "m1");
-        assertThat(bean.getNeuerTitel()).isEmpty();
+    void detailSpeichernImNeumodus_leererTitelWirdIgnoriert() {
+        bean.laden();
+        bean.neuOeffnen(1L);
+        bean.setDetailTitel("  ");
+        bean.detailSpeichern();
+        verify(service, never()).createCard(anyLong(), anyString(), any(), any(), any(), anyString());
     }
 }

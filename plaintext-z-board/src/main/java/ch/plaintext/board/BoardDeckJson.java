@@ -19,6 +19,7 @@ public final class BoardDeckJson {
     }
 
     /** Ein Board ({@code GET /boards}). */
+    @lombok.Getter
     public static class BoardJson implements Serializable {
 
         private static final long serialVersionUID = 1L;
@@ -35,6 +36,7 @@ public final class BoardDeckJson {
     }
 
     /** Ein Label ({@code labels} an der Karte). */
+    @lombok.Getter
     public static class LabelJson implements Serializable {
 
         private static final long serialVersionUID = 1L;
@@ -52,6 +54,7 @@ public final class BoardDeckJson {
     }
 
     /** Eine Karte. {@code order} entspricht der Deck-Reihenfolge/Prioritaet. */
+    @lombok.Getter
     public static class CardJson implements Serializable {
 
         private static final long serialVersionUID = 1L;
@@ -80,6 +83,7 @@ public final class BoardDeckJson {
     }
 
     /** Ein Stapel; {@code cards} liegt eingebettet wie im Deck ({@code GET /boards/{bid}/stacks}). */
+    @lombok.Getter
     public static class StackJson implements Serializable {
 
         private static final long serialVersionUID = 1L;
@@ -101,6 +105,7 @@ public final class BoardDeckJson {
     }
 
     /** Ein Kommentar ({@code actorId}/{@code actorDisplayName}/{@code creationDateTime} wie im Deck). */
+    @lombok.Getter
     public static class CommentJson implements Serializable {
 
         private static final long serialVersionUID = 1L;

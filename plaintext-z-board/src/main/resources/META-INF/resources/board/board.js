@@ -50,7 +50,8 @@
         var ziel = spalte.getAttribute('data-pt-stack');
         raeumen();
         if (karte && ziel && typeof window.verschieben === 'function') {
-            window.verschieben([{name: 'karte', value: karte}, {name: 'ziel', value: ziel}]);
+            // remoteCommand wandelt ein {k: v}-Objekt selbst in Params um
+            window.verschieben({karte: karte, ziel: ziel});
         }
     });
 

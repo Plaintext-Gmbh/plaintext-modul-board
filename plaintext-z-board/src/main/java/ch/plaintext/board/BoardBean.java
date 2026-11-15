@@ -90,10 +90,6 @@ public class BoardBean implements Serializable {
 
     private long detailStackId;
 
-    /** Neukarten-Titel je Stapel (Eingabefeld unter der Spalte) — Map-Binding in board.xhtml. */
-    @Getter
-    private final Map<Long, String> neuerTitel = new HashMap<>();
-
     public BoardBean() {
     }
 
@@ -188,13 +184,36 @@ public class BoardBean implements Serializable {
         neuerKommentar = null;
     }
 
+    /** Neumodus: der zu fuellende Stapel (Kartendetail als Anlage-Dialog genutzt). */
+    private long neuStackId;
+
+    /** Legt eine Karte im Stapel neu an (Detail-Dialog im Neumodus, Karte 2193 Phase 4). */
+    public void neuOeffnen(long stackId) {
+        neuStackId = stackId;
+        detailKarteId = null;
+        detailTitel = "";
+        detailBeschreibung = "";
+        detailHtml = "";
+        detailKommentare = List.of();
+        detailStackId = stackId;
+        neuerKommentar = null;
+    }
+
     public void detailSpeichern() {
+        String mandat = security.getMandat();
         if (detailKarteId == null) {
-            return;
+            if (detailTitel == null || detailTitel.isBlank()) {
+                return;
+            }
+            service.createCard(neuStackId, detailTitel.trim(),
+                    detailBeschreibung == null || detailBeschreibung.isBlank() ? null
+                            : detailBeschreibung.trim(),
+                    null, null, mandat);
+        } else {
+            service.updateCard(boardId, detailStackId, detailKarteId, detailTitel, detailBeschreibung,
+                    null, null, mandat);
+            detailHtml = markdown.render(detailBeschreibung);
         }
-        service.updateCard(boardId, detailStackId, detailKarteId, detailTitel, detailBeschreibung,
-                null, null, security.getMandat());
-        detailHtml = markdown.render(detailBeschreibung);
         laden();
     }
 
@@ -219,17 +238,6 @@ public class BoardBean implements Serializable {
 
     public void schliessen() {
         detailKarteId = null;
-    }
-
-    // ── Neukarten ──────────────────────────────────────────
-
-    public void karteAnlegen(long stackId) {
-        String titel = neuerTitel.remove(stackId);
-        if (titel == null || titel.isBlank()) {
-            return;
-        }
-        service.createCard(stackId, titel.trim(), null, null, null, security.getMandat());
-        laden();
     }
 
     /** Stack der geoefneten Karte — die Verschieben-Buttons blenden den aktuellen Stapel ab. */

@@ -19,29 +19,32 @@
 
     <ui:define name="content">
         <h:form id="bf">
+            <!-- Spring-Security-CSRF fuer JSF: ohne dieses Feld wird jeder Ajax-POST
+                 mit 403 abgewiesen (JsfAjaxAwareAccessDeniedHandler). Muster: module.xhtml. -->
+            <input type="hidden" name="_csrf" value="#{_csrf.token}"/>
             <h:outputStylesheet library="board" name="board.css"/>
             <h:outputScript library="board" name="board.js" target="body"/>
 
             <h:panelGroup layout="block" rendered="#{boardBean.boardTitel == null}"
                           styleClass="pt-board-leer">
-                <h:outputText value="#{i18n.t('board.keinBoard')}"/>
+                <h:outputText value="#{i18n.t('Kein Board vorhanden.')}"/>
             </h:panelGroup>
 
             <h:panelGroup layout="block" rendered="#{boardBean.boardTitel != null}">
                 <!-- Filterleiste -->
                 <h:panelGroup layout="block" styleClass="pt-board-filter">
-                    <h:outputText value="#{i18n.t('board.filter')}" styleClass="pt-board-filter-label"/>
+                    <h:outputText value="#{i18n.t('Filter')}" styleClass="pt-board-filter-label"/>
                     <p:inputText id="filterText" value="#{boardBean.filterText}"
-                                 placeholder="#{i18n.t('board.filter.text')}" styleClass="pt-board-filter-text">
-                        <p:ajax event="keyup" delay="300" process="@this" update="spalten"
+                                 placeholder="#{i18n.t('Suche in Titel und Beschreibung')}" styleClass="pt-board-filter-text">
+                        <p:ajax event="keyup" delay="300" process="@this" update=":bf:spalten"
                                 listener="#{boardBean.laden}"/>
                     </p:inputText>
                     <p:selectOneMenu id="filterLabel" value="#{boardBean.filterLabelId}"
                                      styleClass="pt-board-filter-label-auswahl">
-                        <f:selectItem itemLabel="#{i18n.t('board.filter.alleLabels')}" itemValue=""/>
+                        <f:selectItem itemLabel="#{i18n.t('Alle Labels')}" itemValue=""/>
                         <f:selectItems value="#{boardBean.labels}" var="label"
                                        itemLabel="#{label.title}" itemValue="#{label.id}"/>
-                        <p:ajax process="@this" update="spalten" listener="#{boardBean.laden}"/>
+                        <p:ajax process="@this" update=":bf:spalten" listener="#{boardBean.laden}"/>
                     </p:selectOneMenu>
                 </h:panelGroup>
 
@@ -59,7 +62,7 @@
                                               rendered="#{stapel.wipLimit != null}"/>
                             </h:panelGroup>
                             <h:panelGroup layout="block" styleClass="pt-board-karten">
-                                <ui:repeat value="#{stapel.karten}" var="karte">
+                                <ui:repeat value="#{stapel.cards}" var="karte">
                                     <h:panelGroup layout="block" styleClass="pt-board-karte"
                                                   a:draggable="true" a:data-pt-karte="#{karte.id}">
                                         <p:commandLink value="#{karte.title}"
@@ -81,13 +84,11 @@
                                 </ui:repeat>
                             </h:panelGroup>
                             <h:panelGroup layout="block" styleClass="pt-board-neu">
-                                <p:inputText value="#{boardBean.neuerTitel[stapel.id]}"
-                                             placeholder="#{i18n.t('board.neueKarte')}"
-                                             styleClass="pt-board-neu-text"/>
-                                <p:commandButton icon="pi pi-plus" action="#{boardBean.karteAnlegen(stapel.id)}"
-                                                 process="@parent" update="spalten"
+                                <p:commandButton icon="pi pi-plus" action="#{boardBean.neuOeffnen(stapel.id)}"
+                                                 process="@this" update=":bf:karteDetail"
+                                                 oncomplete="PF('karteDlg').show()"
                                                  styleClass="ui-button-outlined"
-                                                 title="#{i18n.t('board.neueKarte.anlegen')}"/>
+                                                 title="#{i18n.t('Karte anlegen')}"/>
                             </h:panelGroup>
                         </h:panelGroup>
                     </ui:repeat>
@@ -95,7 +96,7 @@
 
                 <!-- Drag and Drop: board.js ruft diesen remoteCommand mit karte/ziel auf -->
                 <p:remoteCommand name="verschieben" actionListener="#{boardBean.verschiebenParam}"
-                                 update="spalten" process="@this"/>
+                                 update=":bf:spalten" process="@this"/>
             </h:panelGroup>
 
             <!-- Kartendetail: Titel/Beschreibung editierbar, Markdown-Vorschau, Kommentare,
@@ -103,31 +104,28 @@
             <p:dialog widgetVar="karteDlg" modal="true" closable="true" resizable="true"
                       styleClass="pt-board-dialog mobile-safe" header="#{boardBean.detailTitel}">
                 <h:panelGroup layout="block" id="karteDetail">
-                    <h:panelGroup layout="block" rendered="#{boardBean.detailKarteId != null}">
+                    <h:panelGroup layout="block">
                         <h:panelGroup layout="block" styleClass="pt-board-detail-feld">
-                            <h:outputText value="#{i18n.t('board.detail.titel')}" styleClass="pt-board-filter-label"/>
+                            <h:outputText value="#{i18n.t('Titel')}" styleClass="pt-board-filter-label"/>
                             <p:inputText value="#{boardBean.detailTitel}" styleClass="pt-board-detail-titel"/>
                         </h:panelGroup>
                         <h:panelGroup layout="block" styleClass="pt-board-detail-feld">
-                            <h:outputText value="#{i18n.t('board.detail.beschreibung')}"
+                            <h:outputText value="#{i18n.t('Beschreibung')}"
                                           styleClass="pt-board-filter-label"/>
                             <p:inputTextarea value="#{boardBean.detailBeschreibung}" rows="7"
                                              styleClass="pt-board-detail-text"
-                                             placeholder="#{i18n.t('board.detail.beschreibung.hint')}">
-                                <p:ajax event="change" process="@this"
-                                        listener="#{boardBean.detailSpeichern()}"
-                                        update="vorschau spalten"/>
-                            </p:inputTextarea>
+                                             placeholder="#{i18n.t('Markdown wird unterstützt')}"/>
                         </h:panelGroup>
                         <h:panelGroup layout="block" styleClass="pt-board-detail-feld">
-                            <h:outputText value="#{i18n.t('board.detail.vorschau')}"
+                            <h:outputText value="#{i18n.t('Vorschau')}"
                                           styleClass="pt-board-filter-label"/>
                             <h:panelGroup layout="block" id="vorschau" styleClass="pt-board-vorschau">
                                 <h:outputText value="#{boardBean.detailHtml}" escape="false"/>
                             </h:panelGroup>
                         </h:panelGroup>
-                        <h:panelGroup layout="block" styleClass="pt-board-detail-feld">
-                            <h:outputText value="#{i18n.t('board.detail.kommentare')}"
+                        <h:panelGroup layout="block" styleClass="pt-board-detail-feld"
+                                      rendered="#{boardBean.detailKarteId != null}">
+                            <h:outputText value="#{i18n.t('Kommentare')}"
                                           styleClass="pt-board-filter-label"/>
                             <ui:repeat value="#{boardBean.detailKommentare}" var="kommentar">
                                 <h:panelGroup layout="block" styleClass="pt-board-kommentar">
@@ -139,31 +137,37 @@
                             </ui:repeat>
                             <h:panelGroup layout="block" styleClass="pt-board-kommentar-neu">
                                 <p:inputText value="#{boardBean.neuerKommentar}"
-                                             placeholder="#{i18n.t('board.detail.kommentar.neu')}"
+                                             placeholder="#{i18n.t('Kommentar schreiben')}"
                                              styleClass="pt-board-neu-text"/>
                                 <p:commandButton icon="pi pi-comment" action="#{boardBean.kommentarSpeichern()}"
                                                  process="@this :bf:karteDetail" update="karteDetail"
                                                  styleClass="ui-button-outlined"
-                                                 title="#{i18n.t('board.detail.kommentar.speichern')}"/>
+                                                 title="#{i18n.t('Kommentar speichern')}"/>
                             </h:panelGroup>
                         </h:panelGroup>
                         <h:panelGroup layout="block" styleClass="pt-board-detail-aktionen">
-                            <p:commandButton value="#{i18n.t('board.detail.loeschen')}" icon="pi pi-trash"
+                            <p:commandButton value="#{i18n.t('Speichern')}" icon="pi pi-check"
+                                             action="#{boardBean.detailSpeichern()}" process="karteDetail"
+                                             update=":bf:karteDetail :bf:spalten"
+                                             oncomplete="if(!args.validationFailed){PF('karteDlg').hide();}"
+                                             styleClass="ui-button-outlined"/>
+                            <p:commandButton value="#{i18n.t('Löschen')}" icon="pi pi-trash"
                                              action="#{boardBean.detailLoeschen()}" process="@this"
-                                             update="spalten" styleClass="ui-button-danger ui-button-outlined"
-                                             oncomplete="PF('karteDlg').hide()">
-                                <p:confirm message="#{i18n.t('board.detail.loeschen.confirm')}"/>
+                                             update=":bf:spalten" styleClass="ui-button-danger ui-button-outlined"
+                                             oncomplete="PF('karteDlg').hide()"
+                                             rendered="#{boardBean.detailKarteId != null}">
+                                <p:confirm message="#{i18n.t('Karte wirklich löschen?')}"/>
                             </p:commandButton>
                             <ui:repeat value="#{boardBean.stapel}" var="ziel">
                                 <p:commandButton value="#{ziel.title}" icon="pi pi-arrow-right"
                                                  action="#{boardBean.verschieben(boardBean.detailKarteId, ziel.id)}"
-                                                 process="@this" update="karteDetail spalten"
+                                                 process="@this" update=":bf:karteDetail :bf:spalten"
                                                  styleClass="ui-button-outlined"
-                                                 rendered="#{ziel.id != boardBean.detailStackId}"/>
+                                                 rendered="#{boardBean.detailKarteId != null and ziel.id != boardBean.detailStackId}"/>
                             </ui:repeat>
-                            <p:commandButton value="#{i18n.t('board.detail.schliessen')}" icon="pi pi-times"
+                            <p:commandButton value="#{i18n.t('Schließen')}" icon="pi pi-times"
                                              action="#{boardBean.schliessen()}" process="@this"
-                                             oncomplete="PF('karteDlg').hide()" update="spalten"
+                                             oncomplete="PF('karteDlg').hide()" update=":bf:spalten"
                                              styleClass="ui-button-outlined"/>
                         </h:panelGroup>
                     </h:panelGroup>
