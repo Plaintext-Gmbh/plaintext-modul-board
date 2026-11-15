@@ -6,7 +6,8 @@ Labels, Bearbeiter), Kommentare. Ersetzt das Nextcloud-Deck des «Plaintext-Back
 die Karten-IDs aus dem Deck bleiben bei der Migration gleich.
 
 REST-API deck-kompatibel: `~/scripts/deck` (Backend-Schalter `backend=nextcloud|app`)
-spricht dieselben Endpunkte gegen die App, MCP-Werkzeuge für die Agenten kommen dazu.
+spricht dieselben Endpunkte gegen die App; MCP-Werkzeuge (`board_*`) steuern das
+Board natuerlichsprachlich — SCOPE_READ zum Lesen, SCOPE_WRITE zum Schreiben.
 
 Offen, MPL-2.0.
 
@@ -23,8 +24,11 @@ Offen, MPL-2.0.
    ```
 
 2. **Fertig.** Das Modul meldet sich selbst (`BoardAutoConfiguration`,
-   `META-INF/spring/…AutoConfiguration.imports`): REST-API unter `/api/deck/v1`, Tabellen
-   per Flyway (`db/migration`), später Kanban-Seite und MCP-Werkzeuge.
+   `META-INF/spring/…AutoConfiguration.imports`): REST-API unter `/api/deck/v1`,
+   MCP-Werkzeuge (`board_list_boards`, `board_list_stacks`, `board_get_card`,
+   `board_create_card`, `board_move_card`, `board_append_description`,
+   `board_add_comment`, `board_set_label`), Tabellen per Flyway (`db/migration`);
+   die Kanban-Seite folgt.
 
 3. **Zugriff für Skripte/Agenten:** API-Token (ADMIN-Scope) als
    `Authorization: Bearer <token>`, wie die anderen MCP-/REST-Werkzeuge der App.

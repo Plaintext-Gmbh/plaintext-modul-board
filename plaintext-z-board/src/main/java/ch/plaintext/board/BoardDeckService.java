@@ -74,6 +74,12 @@ public class BoardDeckService {
                 .map(CommentJson::of).toList();
     }
 
+    /** Eine Karte ohne Board-/Stapel-Kontext — bequemer Einstieg fuer MCP und Skripte. */
+    @Transactional(readOnly = true)
+    public CardJson card(long cardId, String mandat) {
+        return CardJson.of(cardById(cardId, mandat));
+    }
+
     // ── Schreiben ──────────────────────────────────────────
 
     @Transactional
@@ -106,6 +112,51 @@ public class BoardDeckService {
         karte.setSortIndex(order == null ? 999 : order);
         karte.setDueDate(parseDueDate(duedate));
         return CardJson.of(cardRepository.save(karte));
+    }
+
+    /** Eine Karte direkt im Stapel anlegen — der Stapel bestimmt das Board (MCP-Einstieg). */
+    @Transactional
+    public CardJson createCard(long stackId, String title, String description, Integer order, String duedate,
+                               String mandat) {
+        BoardStack s = stackRepository.findById(stackId)
+                .orElseThrow(() -> new NoSuchElementException("Stapel " + stackId + " nicht gefunden"));
+        return createCard(s.getBoard().getId(), stackId, title, description, order, duedate, mandat);
+    }
+
+    /**
+     * Haengt Text an die Beschreibung an ("deck append"): bestehender Text, Leerzeile, neuer Text.
+     * Letzter Schreibende gewinnt wie im Deck — Reihenfolge ist Sache des Aufrufers (Slot 413).
+     */
+    @Transactional
+    public CardJson appendDescription(long cardId, String text, String mandat) {
+        BoardCard karte = cardById(cardId, mandat);
+        String alt = karte.getDescription() == null ? "" : karte.getDescription();
+        karte.setDescription(alt.isBlank() ? text : alt + "\n\n" + text);
+        return CardJson.of(karte);
+    }
+
+    /**
+     * Weist der Karte ein Label zu — nach Titel gesucht, auf dem Karten-Board angelegt, wenn es
+     * noch fehlt ({@code farbe} nur beim Anlegen relevant, Deck-Hex ohne '#', Vorgabe grau).
+     */
+    @Transactional
+    public CardJson setLabel(long cardId, String titel, String farbe, String mandat) {
+        BoardCard karte = cardById(cardId, mandat);
+        BoardLabel label = labelRepository.findByBoardId(karte.getBoard().getId()).stream()
+                .filter(l -> l.getTitle() != null && l.getTitle().equalsIgnoreCase(titel))
+                .findFirst()
+                .orElseGet(() -> {
+                    BoardLabel neu = new BoardLabel();
+                    neu.setBoard(karte.getBoard());
+                    neu.setTitle(titel);
+                    neu.setColor(farbe == null || farbe.isBlank() ? "999999" : farbe);
+                    return labelRepository.save(neu);
+                });
+        boolean schon = karte.getLabels().stream().anyMatch(l -> l.getId().equals(label.getId()));
+        if (!schon) {
+            karte.getLabels().add(label);
+        }
+        return CardJson.of(karte);
     }
 
     @Transactional
