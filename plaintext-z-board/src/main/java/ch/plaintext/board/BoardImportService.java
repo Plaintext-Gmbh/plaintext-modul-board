@@ -28,8 +28,7 @@ import java.util.NoSuchElementException;
 public class BoardImportService {
 
     private final JdbcTemplate jdbc;
-    private final BoardRepository boardRepository;
-    private final BoardStackRepository stackRepository;
+    private final BoardZugriff zugriff;
 
     /**
      * Legt eine Karte mit fester Id (und ihren Labels und Kommentaren) an oder ersetzt sie.
@@ -38,12 +37,8 @@ public class BoardImportService {
      */
     @Transactional
     public int importCard(long boardId, BoardDeckJson.CardImportJson karte, String mandat, String actor) {
-        Board board = boardRepository.findById(boardId)
-                .filter(b -> mandat.equals(b.getMandat()))
-                .orElseThrow(() -> new NoSuchElementException("Board " + boardId + " nicht im Mandat " + mandat));
-        BoardStack stack = stackRepository.findById(karte.stackId)
-                .filter(s -> s.getBoard().getId().equals(board.getId()))
-                .orElseThrow(() -> new NoSuchElementException("Stapel " + karte.stackId + " nicht auf Board " + boardId));
+        Board board = zugriff.board(boardId, mandat);
+        BoardStack stack = zugriff.stack(boardId, karte.stackId);
 
         Timestamp jetzt = Timestamp.from(Instant.now());
         Timestamp angelegt = karte.createdDate == null ? jetzt : Timestamp.from(Instant.parse(karte.createdDate));

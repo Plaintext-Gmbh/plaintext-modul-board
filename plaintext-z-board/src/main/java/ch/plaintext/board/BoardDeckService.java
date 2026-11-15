@@ -20,7 +20,8 @@ import java.util.NoSuchElementException;
 /**
  * Fachlogik der Deck-kompatiblen REST-API (Karte 2193). Liest und schreibt ausschliesslich im
  * Mandat des API-Tokens; das Board des Mandanten ist das Kanban-Board (beim Plaintext-Backlog
- * das migrierte Nextcloud-Deck-Board).
+ * das migrierte Nextcloud-Deck-Board). Einzelzugriffe per Id laufen ueber {@link BoardZugriff}
+ * (Sichtbarkeitspruefung, Karte 1533).
  * <p>
  * Beschreibungs-Updates ({@code deck append}, Slot 413) sind bewusst einfach: letzter
  * Schreibende gewinnt, wie im Deck — die Slot-Logik verhindert Mehrfach-Besitzer zeitlich.
@@ -35,6 +36,7 @@ public class BoardDeckService {
     private final BoardCardRepository cardRepository;
     private final BoardLabelRepository labelRepository;
     private final BoardCommentRepository commentRepository;
+    private final BoardZugriff zugriff;
 
     // ── Lesen ──────────────────────────────────────────────
 
@@ -45,12 +47,12 @@ public class BoardDeckService {
 
     @Transactional(readOnly = true)
     public BoardDeckJson.BoardJson board(long boardId, String mandat) {
-        return boardJsonMitLabels(board(boardId, mandat, true));
+        return boardJsonMitLabels(zugriff.board(boardId, mandat));
     }
 
     @Transactional(readOnly = true)
     public List<StackJson> stacks(long boardId, String mandat) {
-        Board b = board(boardId, mandat, true);
+        Board b = zugriff.board(boardId, mandat);
         return stackRepository.findByBoardIdOrderBySortIndex(b.getId()).stream()
                 .map(s -> {
                     StackJson j = StackJson.of(s, cardRepository.findByStackIdOrderBySortIndex(s.getId()));
@@ -62,16 +64,23 @@ public class BoardDeckService {
 
     @Transactional(readOnly = true)
     public List<CardJson> cards(long boardId, long stackId, String mandat) {
-        stack(boardId, stackId, mandat);
+        zugriff.stack(boardId, stackId);
         List<CardJson> karten = cardRepository.findByStackIdOrderBySortIndex(stackId).stream()
                 .map(CardJson::of).toList();
         kommentarzahlFuellen(karten);
         return karten;
     }
 
+    /**
+     * Einzelkarte — Deck-Verhalten (Karte 2193, Testlauf 15.11.2026): die Stack-Id im Pfad wird
+     * IGNORIERT, der Schutz kommt vom Board. Das deck-Skript tastet Karten mit dem vorrat-Stapel
+     * ab, auch nachdem die Karte verschoben wurde ("Deck ignoriert die Stack-Id im GET-Pfad",
+     * im Skript verifiziert 24.07.2026).
+     */
     @Transactional(readOnly = true)
     public CardJson card(long boardId, long stackId, long cardId, String mandat) {
-        return CardJson.of(card(boardId, stackId, cardId, mandat, true));
+        zugriff.board(boardId, mandat);
+        return CardJson.of(zugriff.cardAufBoard(boardId, cardId));
     }
 
     @Transactional(readOnly = true)
@@ -93,12 +102,12 @@ public class BoardDeckService {
     public BoardDeckJson.BoardJson createBoard(String title, String mandat) {
         Board b = new Board();
         b.setTitle(title);
-        return BoardDeckJson.BoardJson.of(boardRepository.save(b));
+        return boardJsonMitLabels(boardRepository.save(b));
     }
 
     @Transactional
     public StackJson createStack(long boardId, String title, String mandat) {
-        Board b = board(boardId, mandat, true);
+        Board b = zugriff.board(boardId, mandat);
         int naechste = stackRepository.findByBoardId(b.getId()).stream().mapToInt(BoardStack::getSortIndex).max().orElse(-1) + 1;
         BoardStack s = new BoardStack();
         s.setBoard(b);
@@ -110,7 +119,7 @@ public class BoardDeckService {
     @Transactional
     public CardJson createCard(long boardId, long stackId, String title, String description, Integer order,
                                String duedate, String mandat) {
-        BoardStack s = stack(boardId, stackId, mandat);
+        BoardStack s = zugriff.stack(boardId, stackId);
         BoardCard karte = new BoardCard();
         karte.setBoard(s.getBoard());
         karte.setStack(s);
@@ -125,8 +134,7 @@ public class BoardDeckService {
     @Transactional
     public CardJson createCard(long stackId, String title, String description, Integer order, String duedate,
                                String mandat) {
-        BoardStack s = stackRepository.findById(stackId)
-                .orElseThrow(() -> new NoSuchElementException("Stapel " + stackId + " nicht gefunden"));
+        BoardStack s = zugriff.stack(stackId);
         return createCard(s.getBoard().getId(), stackId, title, description, order, duedate, mandat);
     }
 
@@ -169,7 +177,7 @@ public class BoardDeckService {
     @Transactional
     public CardJson updateCard(long boardId, long stackId, long cardId, String title, String description,
                                Integer order, String duedate, String mandat) {
-        BoardCard karte = card(boardId, stackId, cardId, mandat, true);
+        BoardCard karte = karteAufBoard(boardId, cardId, mandat);
         if (title != null) {
             karte.setTitle(title);
         }
@@ -187,7 +195,7 @@ public class BoardDeckService {
 
     @Transactional
     public void deleteCard(long boardId, long stackId, long cardId, String mandat) {
-        BoardCard karte = card(boardId, stackId, cardId, mandat, true);
+        BoardCard karte = karteAufBoard(boardId, cardId, mandat);
         commentRepository.findByCardIdOrderByCreatedDate(karte.getId()).forEach(commentRepository::delete);
         cardRepository.delete(karte);
     }
@@ -195,31 +203,33 @@ public class BoardDeckService {
     @Transactional
     public void moveCard(long cardId, long zielStackId, int order, String mandat) {
         BoardCard karte = cardById(cardId, mandat);
-        BoardStack ziel = stackRepository.findById(zielStackId)
-                .filter(s -> karte.getBoard().getId().equals(s.getBoard().getId()))
-                .orElseThrow(() -> new NoSuchElementException("Ziel-Stapel " + zielStackId + " nicht auf dem Board"));
+        BoardStack ziel = zugriff.stack(zielStackId);
+        if (!karte.getBoard().getId().equals(ziel.getBoard().getId())) {
+            throw new NoSuchElementException("Ziel-Stapel " + zielStackId + " nicht auf dem Board");
+        }
         karte.setStack(ziel);
         karte.setSortIndex(order);
     }
 
     @Transactional
     public void assignLabel(long boardId, long stackId, long cardId, long labelId, String mandat) {
-        BoardCard karte = card(boardId, stackId, cardId, mandat, true);
-        BoardLabel label = labelRepository.findById(labelId)
-                .filter(l -> karte.getBoard().getId().equals(l.getBoard().getId()))
-                .orElseThrow(() -> new NoSuchElementException("Label " + labelId + " nicht auf dem Board"));
+        BoardCard karte = karteAufBoard(boardId, cardId, mandat);
+        BoardLabel label = zugriff.label(labelId);
+        if (!karte.getBoard().getId().equals(label.getBoard().getId())) {
+            throw new NoSuchElementException("Label " + labelId + " nicht auf dem Board");
+        }
         karte.getLabels().add(label);
     }
 
     @Transactional
     public void removeLabel(long boardId, long stackId, long cardId, long labelId, String mandat) {
-        BoardCard karte = card(boardId, stackId, cardId, mandat, true);
+        BoardCard karte = karteAufBoard(boardId, cardId, mandat);
         karte.getLabels().removeIf(l -> l.getId() == labelId);
     }
 
     @Transactional
     public LabelJson createLabel(long boardId, String title, String color, String mandat) {
-        Board b = board(boardId, mandat, true);
+        Board b = zugriff.board(boardId, mandat);
         BoardLabel l = new BoardLabel();
         l.setBoard(b);
         l.setTitle(title);
@@ -242,40 +252,26 @@ public class BoardDeckService {
     @Transactional
     public void deleteComment(long cardId, long commentId, String mandat) {
         BoardCard karte = cardById(cardId, mandat);
-        BoardComment c = commentRepository.findById(commentId)
-                .filter(x -> karte.getId().equals(x.getCard().getId()))
-                .orElseThrow(() -> new NoSuchElementException("Kommentar " + commentId + " nicht an Karte " + cardId));
+        BoardComment c = zugriff.comment(commentId);
+        if (!karte.getId().equals(c.getCard().getId())) {
+            throw new NoSuchElementException("Kommentar " + commentId + " nicht an Karte " + cardId);
+        }
         commentRepository.delete(c);
     }
 
     // ── Helfer ─────────────────────────────────────────────
 
-    private Board board(long boardId, String mandat, boolean pflicht) {
-        Board b = boardRepository.findById(boardId).filter(x -> mandat.equals(x.getMandat())).orElse(null);
-        if (b == null && pflicht) {
-            throw new NoSuchElementException("Board " + boardId + " nicht im Mandat " + mandat);
-        }
-        return b;
+    /** Karte im Board-Kontext (Deck: Stack-Id im Pfad ignorieren, Schutz = Board). */
+    private BoardCard karteAufBoard(long boardId, long cardId, String mandat) {
+        zugriff.board(boardId, mandat);
+        return zugriff.cardAufBoard(boardId, cardId);
     }
 
-    private BoardStack stack(long boardId, long stackId, String mandat) {
-        board(boardId, mandat, true);
-        return stackRepository.findById(stackId)
-                .filter(s -> s.getBoard().getId() == boardId)
-                .orElseThrow(() -> new NoSuchElementException("Stapel " + stackId + " nicht auf Board " + boardId));
-    }
-
-    /**
-     * Karte im Board-Kontext. Deck-Verhalten (Karte 2193, Testlauf 15.11.2026): die Stack-Id im
-     * Pfad wird IGNORIERT — das deck-Skript tastet Einzelkarten immer mit dem vorrat-Stapel ab
-     * ("Deck ignoriert die Stack-Id im GET-Pfad", im Skript verifiziert 24.07.2026), auch nachdem
-     * die Karte verschoben wurde. Der Schutz kommt vom Board, nicht vom Stapel.
-     */
-    private BoardCard card(long boardId, long stackId, long cardId, String mandat, boolean pflicht) {
-        Board b = board(boardId, mandat, true);
-        return cardRepository.findById(cardId)
-                .filter(k -> b.getId().equals(k.getBoard().getId()))
-                .orElseThrow(() -> new NoSuchElementException("Karte " + cardId + " nicht auf Board " + boardId));
+    /** Karte per Id, sichtbar nur ueber das Board-Mandat. */
+    private BoardCard cardById(long cardId, String mandat) {
+        BoardCard karte = zugriff.card(cardId);
+        zugriff.board(karte.getBoard().getId(), mandat);
+        return karte;
     }
 
     private BoardDeckJson.BoardJson boardJsonMitLabels(Board b) {
@@ -286,13 +282,6 @@ public class BoardDeckService {
 
     private void kommentarzahlFuellen(List<CardJson> karten) {
         karten.forEach(k -> k.commentsCount = commentRepository.countByCardId(k.id));
-    }
-
-    private BoardCard cardById(long cardId, String mandat) {
-        BoardCard karte = cardRepository.findById(cardId)
-                .orElseThrow(() -> new NoSuchElementException("Karte " + cardId + " nicht gefunden"));
-        board(karte.getBoard().getId(), mandat, true);
-        return karte;
     }
 
     private Date parseDueDate(String duedate) {
