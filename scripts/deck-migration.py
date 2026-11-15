@@ -218,12 +218,18 @@ def karten_signatur(karte, kommentare):
     h.update(str(karte.get("titel") or karte.get("title") or "").encode())
     h.update(str(karte.get("beschreibung") if "beschreibung" in karte else karte.get("description") or "").encode())
     h.update(str(karte.get("order", 0)).encode())
-    labels = sorted((l.get("titel") or l.get("title") or "") for l in karte.get("labels") or [])
+    # set(): die App haelt Labels als Menge — Deck haengt Dubletten manchmal mehrfach an
+    # (Befund Karte 1778: «Zu überprüfen» 3x), der Import dedupliziert zu Recht.
+    labels = sorted({(l.get("titel") or l.get("title") or "") for l in karte.get("labels") or []})
     h.update("|".join(labels).encode())
-    for c in kommentare or []:
-        h.update(str(c.get("nachricht") or c.get("message") or "").encode())
-        h.update(str(c.get("zeit") or c.get("createdDateTime") or "").encode())
-    return h.hexdigest()[:16]
+    # Kommentare ordnungsneutral hashen: die App sortiert nach Zeitstempel, Deck liefert
+    # Insert-Reihenfolge — bei zwei Kommentaren pro Sekunde (Befund 1621) stehen sie anders.
+    paare = sorted(
+        (str(c.get("nachricht") or c.get("message") or "")
+         + "|" + str(c.get("zeit") or c.get("creationDateTime") or ""))
+        for c in kommentare or [])
+    for paar in paare:
+        h.update(paar.encode())
 
 
 def app_zustand(app_url, app_token, board_id):
