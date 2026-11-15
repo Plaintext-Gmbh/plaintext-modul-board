@@ -40,26 +40,33 @@ public class BoardDeckService {
 
     @Transactional(readOnly = true)
     public List<BoardDeckJson.BoardJson> boards(String mandat) {
-        return boardRepository.findByMandat(mandat).stream().map(BoardDeckJson.BoardJson::of).toList();
+        return boardRepository.findByMandat(mandat).stream().map(this::boardJsonMitLabels).toList();
     }
 
     @Transactional(readOnly = true)
     public BoardDeckJson.BoardJson board(long boardId, String mandat) {
-        return BoardDeckJson.BoardJson.of(board(boardId, mandat, true));
+        return boardJsonMitLabels(board(boardId, mandat, true));
     }
 
     @Transactional(readOnly = true)
     public List<StackJson> stacks(long boardId, String mandat) {
         Board b = board(boardId, mandat, true);
         return stackRepository.findByBoardIdOrderBySortIndex(b.getId()).stream()
-                .map(s -> StackJson.of(s, cardRepository.findByStackIdOrderBySortIndex(s.getId())))
+                .map(s -> {
+                    StackJson j = StackJson.of(s, cardRepository.findByStackIdOrderBySortIndex(s.getId()));
+                    kommentarzahlFuellen(j.cards);
+                    return j;
+                })
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<CardJson> cards(long boardId, long stackId, String mandat) {
         stack(boardId, stackId, mandat);
-        return cardRepository.findByStackIdOrderBySortIndex(stackId).stream().map(CardJson::of).toList();
+        List<CardJson> karten = cardRepository.findByStackIdOrderBySortIndex(stackId).stream()
+                .map(CardJson::of).toList();
+        kommentarzahlFuellen(karten);
+        return karten;
     }
 
     @Transactional(readOnly = true)
@@ -258,11 +265,27 @@ public class BoardDeckService {
                 .orElseThrow(() -> new NoSuchElementException("Stapel " + stackId + " nicht auf Board " + boardId));
     }
 
+    /**
+     * Karte im Board-Kontext. Deck-Verhalten (Karte 2193, Testlauf 15.11.2026): die Stack-Id im
+     * Pfad wird IGNORIERT — das deck-Skript tastet Einzelkarten immer mit dem vorrat-Stapel ab
+     * ("Deck ignoriert die Stack-Id im GET-Pfad", im Skript verifiziert 24.07.2026), auch nachdem
+     * die Karte verschoben wurde. Der Schutz kommt vom Board, nicht vom Stapel.
+     */
     private BoardCard card(long boardId, long stackId, long cardId, String mandat, boolean pflicht) {
-        stack(boardId, stackId, mandat);
+        Board b = board(boardId, mandat, true);
         return cardRepository.findById(cardId)
-                .filter(k -> k.getStack().getId() == stackId)
-                .orElseThrow(() -> new NoSuchElementException("Karte " + cardId + " nicht auf Stapel " + stackId));
+                .filter(k -> b.getId().equals(k.getBoard().getId()))
+                .orElseThrow(() -> new NoSuchElementException("Karte " + cardId + " nicht auf Board " + boardId));
+    }
+
+    private BoardDeckJson.BoardJson boardJsonMitLabels(Board b) {
+        BoardDeckJson.BoardJson j = BoardDeckJson.BoardJson.of(b);
+        labelRepository.findByBoardId(b.getId()).forEach(l -> j.labels.add(LabelJson.of(l)));
+        return j;
+    }
+
+    private void kommentarzahlFuellen(List<CardJson> karten) {
+        karten.forEach(k -> k.commentsCount = commentRepository.countByCardId(k.id));
     }
 
     private BoardCard cardById(long cardId, String mandat) {

@@ -10,4 +10,6 @@ import java.util.List;
 public interface BoardCommentRepository extends JpaRepository<BoardComment, Long> {
 
     List<BoardComment> findByCardIdOrderByCreatedDate(Long cardId);
+
+    long countByCardId(Long cardId);
 }

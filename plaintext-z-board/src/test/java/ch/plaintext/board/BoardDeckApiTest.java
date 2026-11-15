@@ -203,4 +203,71 @@ class BoardDeckApiTest extends BaseIntegrationTest {
         fremd = boardRepository.save(fremd);
         api().get("/api/deck/v1/boards/" + fremd.getId()).then().statusCode(404);
     }
+
+    /**
+     * Deck-Verhalten (Karte 2193, Testlauf 15.11.2026): die Stack-Id im Pfad einer Einzelkarte wird
+     * IGNORIERT — das deck-Skript tastet Karten immer mit dem vorrat-Stapel ab (find_card), auch
+     * nachdem die Karte verschoben wurde. Deck liefert dafür 200; vor dem Fix lieferte die App 404
+     * und show/append/assign brachen nach jedem Move. Sicherheit gibt das Board: eine Karte eines
+     * anderen Boards bleibt 404.
+     */
+    @Test
+    void einzelKarteIgnoriertStackIdImPfad() {
+        Response angelegt = api().body(Map.of("title", "wandert", "order", 0))
+                .post("/api/deck/v1/boards/" + boardId + "/stacks/" + todo + "/cards")
+                .then().statusCode(201).extract().response();
+        long cid = angelegt.jsonPath().getLong("id");
+
+        // Lesen mit FALSCHER Stack-Id (vorrat statt todo) muss 200 liefern
+        api().get("/api/deck/v1/boards/" + boardId + "/stacks/" + vorrat + "/cards/" + cid)
+                .then().statusCode(200)
+                .body("stackId", org.hamcrest.Matchers.is((int) todo));
+
+        // Aendern und Label zuweisen ebenfalls (deck append/label)
+        api().body(Map.of("description", "angepasst"))
+                .put("/api/deck/v1/boards/" + boardId + "/stacks/" + vorrat + "/cards/" + cid)
+                .then().statusCode(200);
+        long labelId = api().body(Map.of("title", "kimi", "color", "ffcc00"))
+                .post("/api/deck/v1/boards/" + boardId + "/labels").then().statusCode(201)
+                .extract().jsonPath().getLong("id");
+        api().body(Map.of("labelId", labelId))
+                .put("/api/deck/v1/boards/" + boardId + "/stacks/" + vorrat + "/cards/" + cid + "/assignLabel")
+                .then().statusCode(200);
+
+        // Karte eines anderen Boards bleibt unsichtbar
+        Board fremd = new Board();
+        fremd.setTitle("fremd");
+        fremd.setMandat("ANDERS");
+        long fremdeBoardId = boardRepository.save(fremd).getId();
+        api().get("/api/deck/v1/boards/" + fremdeBoardId + "/stacks/" + vorrat + "/cards/" + cid)
+                .then().statusCode(404);
+    }
+
+    /** Deck-Formate fuer das Skript: Board laedt Labels eingebettet, Stapelkarten commentsCount. */
+    @Test
+    @SuppressWarnings("unchecked")
+    void boardLabelsUndCommentsCountWieDeck() {
+        Response angelegt = api().body(Map.of("title", "mit-kommentar", "order", 0))
+                .post("/api/deck/v1/boards/" + boardId + "/stacks/" + vorrat + "/cards")
+                .then().statusCode(201).extract().response();
+        long cid = angelegt.jsonPath().getLong("id");
+        api().body(Map.of("message", "ein Kommentar"))
+                .post("/api/deck/v1/cards/" + cid + "/comments").then().statusCode(201);
+        api().body(Map.of("title", "kimi", "color", "ffcc00"))
+                .post("/api/deck/v1/boards/" + boardId + "/labels").then().statusCode(201);
+
+        // Board-Detail und Board-Liste tragen labels[] wie Deck (deck board_labels/labels)
+        api().get("/api/deck/v1/boards/" + boardId).then().statusCode(200)
+                .body("labels.size()", org.hamcrest.Matchers.is(1))
+                .body("labels[0].title", org.hamcrest.Matchers.is("kimi"));
+        List<Map<String, Object>> boards = api().get("/api/deck/v1/boards").then().statusCode(200)
+                .extract().body().jsonPath().getList("$");
+        assertEquals(1, ((List<Map<String, Object>>) boards.get(0).get("labels")).size());
+
+        // Stapelkarten tragen commentsCount wie Deck (deck kommentare/list)
+        api().get("/api/deck/v1/boards/" + boardId + "/stacks").then().statusCode(200)
+                .body("[0].cards[0].commentsCount", org.hamcrest.Matchers.is(1));
+        api().get("/api/deck/v1/boards/" + boardId + "/stacks/" + vorrat + "/cards").then().statusCode(200)
+                .body("[0].commentsCount", org.hamcrest.Matchers.is(1));
+    }
 }

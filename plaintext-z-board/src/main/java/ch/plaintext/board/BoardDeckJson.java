@@ -21,6 +21,7 @@ public final class BoardDeckJson {
     public static class BoardJson {
         public long id;
         public String title;
+        public List<LabelJson> labels = new ArrayList<>();
 
         public static BoardJson of(Board b) {
             BoardJson j = new BoardJson();
@@ -54,6 +55,7 @@ public final class BoardDeckJson {
         public int order;
         public String duedate;
         public boolean archived;
+        public long commentsCount;
         public List<LabelJson> labels = new ArrayList<>();
 
         public static CardJson of(BoardCard c) {
