@@ -6,3 +6,51 @@ Board;it;Bacheca
 Karte;en;Card
 Karte;fr;Carte
 Karte;it;Scheda
+board.keinBoard;en;No board yet
+board.keinBoard;fr;Aucun tableau pour l'instant
+board.keinBoard;it;Nessuna bacheca al momento
+board.filter;en;Filter
+board.filter;fr;Filtrer
+board.filter;it;Filtra
+board.filter.text;en;Search title and description
+board.filter.text;fr;Rechercher dans le titre et la description
+board.filter.text;it;Cerca nel titolo e nella descrizione
+board.filter.alleLabels;en;All labels
+board.filter.alleLabels;fr;Tous les labels
+board.filter.alleLabels;it;Tutte le etichette
+board.neueKarte;en;New card
+board.neueKarte;fr;Nouvelle carte
+board.neueKarte;it;Nuova scheda
+board.neueKarte.anlegen;en;Create card
+board.neueKarte.anlegen;fr;Créer la carte
+board.neueKarte.anlegen;it;Crea la scheda
+board.detail.titel;en;Title
+board.detail.titel;fr;Titre
+board.detail.titel;it;Titolo
+board.detail.beschreibung;en;Description
+board.detail.beschreibung;fr;Description
+board.detail.beschreibung;it;Descrizione
+board.detail.beschreibung.hint;en;Markdown supported
+board.detail.beschreibung.hint;fr;Markdown pris en charge
+board.detail.beschreibung.hint;it;Markdown supportato
+board.detail.vorschau;en;Preview
+board.detail.vorschau;fr;Aperçu
+board.detail.vorschau;it;Anteprima
+board.detail.kommentare;en;Comments
+board.detail.kommentare;fr;Commentaires
+board.detail.kommentare;it;Commenti
+board.detail.kommentar.neu;en;Write a comment
+board.detail.kommentar.neu;fr;Écrire un commentaire
+board.detail.kommentar.neu;it;Scrivi un commento
+board.detail.kommentar.speichern;en;Save comment
+board.detail.kommentar.speichern;fr;Enregistrer le commentaire
+board.detail.kommentar.speichern;it;Salva il commento
+board.detail.loeschen;en;Delete
+board.detail.loeschen;fr;Supprimer
+board.detail.loeschen;it;Elimina
+board.detail.loeschen.confirm;en;Really delete this card?
+board.detail.loeschen.confirm;fr;Vraiment supprimer cette carte ?
+board.detail.loeschen.confirm;it;Eliminare davvero questa scheda?
+board.detail.schliessen;en;Close
+board.detail.schliessen;fr;Fermer
+board.detail.schliessen;it;Chiudi

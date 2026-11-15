@@ -1,0 +1,164 @@
+/* Kanban-Board (board.xhtml, Karte 2193 Phase 4): Spalten flexibel nebeneinander,
+   auf schmalen Geraeten waagrecht scrollbar. WIP-Ueberschreitung faerbt den Spaltenkopf. */
+
+.pt-board {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+}
+
+.pt-board-spalte {
+    flex: 0 0 18rem;
+    background: var(--surface-100, #f4f4f4);
+    border-radius: var(--border-radius, 6px);
+    padding: 0.5rem;
+}
+
+.pt-board-spaltenkopf {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem 0.5rem;
+    font-weight: 600;
+}
+
+.pt-board-wip .pt-board-spaltenkopf {
+    color: var(--red-600, #dc2626);
+}
+
+.pt-board-anzahl,
+.pt-board-wip-wert {
+    font-weight: 400;
+    color: var(--text-color-secondary, #666);
+}
+
+.pt-board-karten {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-height: 2rem;
+}
+
+.pt-board-karte {
+    background: var(--surface-0, #fff);
+    border: 1px solid var(--surface-300, #ddd);
+    border-radius: var(--border-radius, 6px);
+    padding: 0.5rem;
+    cursor: grab;
+}
+
+.pt-board-karte.pt-board-zieht {
+    opacity: 0.5;
+}
+
+.pt-board-kartentitel {
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.pt-board-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.35rem;
+    align-items: center;
+}
+
+.pt-board-label {
+    border: 1px solid;
+    border-radius: 999px;
+    padding: 0 0.5rem;
+    font-size: 0.8em;
+}
+
+.pt-board-datum {
+    font-size: 0.8em;
+    color: var(--text-color-secondary, #666);
+}
+
+.pt-board-spalte.pt-board-ziel {
+    outline: 2px dashed var(--primary-color, #3b82f6);
+    outline-offset: 2px;
+}
+
+.pt-board-neu {
+    display: flex;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+}
+
+.pt-board-neu-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.pt-board-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.pt-board-filter-text {
+    width: 16rem;
+    max-width: 100%;
+}
+
+.pt-board-leer {
+    padding: 2rem;
+    color: var(--text-color-secondary, #666);
+}
+
+.pt-board-detail-feld {
+    margin-bottom: 0.9rem;
+}
+
+.pt-board-detail-titel,
+.pt-board-detail-text {
+    width: 100%;
+}
+
+.pt-board-vorschau {
+    border: 1px solid var(--surface-300, #ddd);
+    border-radius: var(--border-radius, 6px);
+    padding: 0.75rem;
+    min-height: 3rem;
+    overflow-x: auto;
+}
+
+.pt-board-kommentar {
+    border-left: 3px solid var(--surface-300, #ddd);
+    padding-left: 0.6rem;
+    margin: 0.5rem 0;
+}
+
+.pt-board-kommentar-meta {
+    display: block;
+    font-size: 0.8em;
+    color: var(--text-color-secondary, #666);
+}
+
+.pt-board-kommentar-neu {
+    display: flex;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+}
+
+.pt-board-detail-aktionen {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: flex-end;
+}
+
+@media (max-width: 640px) {
+    .pt-board-spalte {
+        flex-basis: 15rem;
+    }
+    .pt-board-filter-text {
+        width: 100%;
+    }
+}

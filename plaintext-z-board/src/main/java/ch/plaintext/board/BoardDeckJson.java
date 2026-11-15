@@ -3,6 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package ch.plaintext.board;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +19,9 @@ public final class BoardDeckJson {
     }
 
     /** Ein Board ({@code GET /boards}). */
-    public static class BoardJson {
+    public static class BoardJson implements Serializable {
+
+        private static final long serialVersionUID = 1L;
         public long id;
         public String title;
         public List<LabelJson> labels = new ArrayList<>();
@@ -32,7 +35,9 @@ public final class BoardDeckJson {
     }
 
     /** Ein Label ({@code labels} an der Karte). */
-    public static class LabelJson {
+    public static class LabelJson implements Serializable {
+
+        private static final long serialVersionUID = 1L;
         public long id;
         public String title;
         public String color;
@@ -47,7 +52,9 @@ public final class BoardDeckJson {
     }
 
     /** Eine Karte. {@code order} entspricht der Deck-Reihenfolge/Prioritaet. */
-    public static class CardJson {
+    public static class CardJson implements Serializable {
+
+        private static final long serialVersionUID = 1L;
         public long id;
         public String title;
         public String description;
@@ -73,10 +80,13 @@ public final class BoardDeckJson {
     }
 
     /** Ein Stapel; {@code cards} liegt eingebettet wie im Deck ({@code GET /boards/{bid}/stacks}). */
-    public static class StackJson {
+    public static class StackJson implements Serializable {
+
+        private static final long serialVersionUID = 1L;
         public long id;
         public String title;
         public int order;
+        public Integer wipLimit;
         public List<CardJson> cards = new ArrayList<>();
 
         public static StackJson of(BoardStack s, List<BoardCard> karten) {
@@ -84,13 +94,16 @@ public final class BoardDeckJson {
             j.id = s.getId();
             j.title = s.getTitle();
             j.order = s.getSortIndex();
+            j.wipLimit = s.getWipLimit();
             karten.forEach(k -> j.cards.add(CardJson.of(k)));
             return j;
         }
     }
 
     /** Ein Kommentar ({@code actorId}/{@code actorDisplayName}/{@code creationDateTime} wie im Deck). */
-    public static class CommentJson {
+    public static class CommentJson implements Serializable {
+
+        private static final long serialVersionUID = 1L;
         public long id;
         public String message;
         public String actorId;
