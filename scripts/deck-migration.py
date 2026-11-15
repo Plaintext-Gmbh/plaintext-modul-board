@@ -22,6 +22,7 @@ import hashlib
 import json
 import os
 import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -176,6 +177,9 @@ def app_import(app_url, app_token, export, board_titel):
 
     ok, fehler = 0, 0
     for karte in export["karten"]:
+        # Das App-API hat ein Rate-Limit (429 ab ~50 raschen Aufrufen): vor jedem
+        # Import kurz anhalten — 160 Karten sind so ~1 Minute, unkritisch.
+        time.sleep(1.4)
         sid = stapel_ids.get(karte["stapelTitel"])
         if sid is None:
             print(f"  FEHLER Karte {karte['id']}: unbekannter Stapel {karte['stapelTitel']}")

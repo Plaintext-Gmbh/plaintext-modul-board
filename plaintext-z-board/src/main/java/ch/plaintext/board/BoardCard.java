@@ -37,8 +37,8 @@ public class BoardCard extends SuperModel {
 
     private String title;
 
-    /** Markdown; Laenge wie Deck-Beschreibungen (Karte 785 'append' haengt an). */
-    @Column(length = 100000)
+    /** Markdown; Laenge wie Deck-Beschreibungen (Karte 785 'append' haengt an) — bis >200k. */
+    @Column(columnDefinition = "text")
     private String description;
 
     /** Reihenfolge/Prioritaet im Stapel (Deck 'order'). */
