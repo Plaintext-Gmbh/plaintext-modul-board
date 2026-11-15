@@ -72,15 +72,15 @@ public class BoardDeckService {
     }
 
     /**
-     * Einzelkarte — Deck-Verhalten (Karte 2193, Testlauf 15.11.2026): die Stack-Id im Pfad wird
-     * IGNORIERT, der Schutz kommt vom Board. Das deck-Skript tastet Karten mit dem vorrat-Stapel
-     * ab, auch nachdem die Karte verschoben wurde ("Deck ignoriert die Stack-Id im GET-Pfad",
-     * im Skript verifiziert 24.07.2026).
+     * Einzelkarte — Deck-Verhalten (Karte 2193): der GET-Pfad ignoriert Board- UND Stack-Id,
+     * die Karte kommt rein per Id (Mandats-Scoping ueber das Board der Karte). Das deck-Skript
+     * tastet Systemkarten (413 Deploy-Slot, 320/412/414) mit dem ARBEITSboard ab und
+     * entscheidet danach, wohin es schreibt — der Leseweg muss deck-kompatibel sein.
+     * Schreibzugriffe (PUT/DELETE/Label) bleiben board-scoped ({@link #karteAufBoard}).
      */
     @Transactional(readOnly = true)
     public CardJson card(long boardId, long stackId, long cardId, String mandat) {
-        zugriff.board(boardId, mandat);
-        return CardJson.of(zugriff.cardAufBoard(boardId, cardId));
+        return CardJson.of(cardById(cardId, mandat));
     }
 
     @Transactional(readOnly = true)

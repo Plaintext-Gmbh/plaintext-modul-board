@@ -208,8 +208,9 @@ class BoardDeckApiTest extends BaseIntegrationTest {
      * Deck-Verhalten (Karte 2193, Testlauf 15.11.2026): die Stack-Id im Pfad einer Einzelkarte wird
      * IGNORIERT — das deck-Skript tastet Karten immer mit dem vorrat-Stapel ab (find_card), auch
      * nachdem die Karte verschoben wurde. Deck liefert dafür 200; vor dem Fix lieferte die App 404
-     * und show/append/assign brachen nach jedem Move. Sicherheit gibt das Board: eine Karte eines
-     * anderen Boards bleibt 404.
+     * und show/append/assign brachen nach jedem Move. Deck ignoriert im GET-Pfad auch die
+     * BOARD-Id (Systemkarten-Probe mit dem Arbeitsboard) — Schreibzugriffe bleiben board-scoped,
+     * fremde Mandate bleiben 404.
      */
     @Test
     void einzelKarteIgnoriertStackIdImPfad() {
@@ -234,13 +235,16 @@ class BoardDeckApiTest extends BaseIntegrationTest {
                 .put("/api/deck/v1/boards/" + boardId + "/stacks/" + vorrat + "/cards/" + cid + "/assignLabel")
                 .then().statusCode(200);
 
-        // Karte eines anderen Boards bleibt unsichtbar
-        Board fremd = new Board();
-        fremd.setTitle("fremd");
-        fremd.setMandat("ANDERS");
-        long fremdeBoardId = boardRepository.save(fremd).getId();
-        api().get("/api/deck/v1/boards/" + fremdeBoardId + "/stacks/" + vorrat + "/cards/" + cid)
-                .then().statusCode(404);
+        // GET ist deck-kompatibel auch BOARD-agnostisch: Systemkarten (413) tastet das
+        // Skript mit dem Arbeitsboard ab — dieselbe Karte ueber ein anderes Board = 200.
+        // Unsichtbar bleibt sie nur in einem anderen MANDAT (fremdesBoardIstNichtSichtbar).
+        Board zweites = new Board();
+        zweites.setTitle("zweites");
+        zweites.setMandat("TEST");
+        long zweiteBoardId = boardRepository.save(zweites).getId();
+        api().get("/api/deck/v1/boards/" + zweiteBoardId + "/stacks/" + vorrat + "/cards/" + cid)
+                .then().statusCode(200)
+                .body("id", org.hamcrest.Matchers.is((int) cid));
     }
 
     /** Deck-Formate fuer das Skript: Board laedt Labels eingebettet, Stapelkarten commentsCount. */

@@ -53,6 +53,7 @@ public class BoardImportService {
                         ON CONFLICT (ID) DO UPDATE SET
                             LAST_MODIFIED_BY = EXCLUDED.LAST_MODIFIED_BY,
                             LAST_MODIFIED_DATE = EXCLUDED.LAST_MODIFIED_DATE,
+                            BOARD_ID = EXCLUDED.BOARD_ID,
                             STACK_ID = EXCLUDED.STACK_ID,
                             TITLE = EXCLUDED.TITLE,
                             DESCRIPTION = EXCLUDED.DESCRIPTION,
