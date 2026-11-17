@@ -208,7 +208,7 @@ public class BoardDeckController {
         return aufruf(auth, request, m -> {
             IApiTokenService.ApiTokenValidationResult v = token(auth, request);
             return ResponseEntity.status(HttpStatus.CREATED).body(service.addComment(
-                    cid, (String) body.get("message"), String.valueOf(v.userId()), v.email(), m));
+                    cid, (String) body.get("message"), String.valueOf(v.userId()), autor(v), m));
         });
     }
 
@@ -256,6 +256,17 @@ public class BoardDeckController {
         } finally {
             SecurityContextHolder.setContext(vorher);
         }
+    }
+
+    /**
+     * Karte 2342 (Entscheid Daniel): die Agenten-Tokens ({@code agent-kimi1}, ...) laufen unter Daniels Benutzer;
+     * als Autor zaehlt dann der Tokenname, sonst stuende ueberall Daniel. Der Besitzer bleibt sichtbar
+     * ({@code agent-kimi1 (daniel@...)}): Tokennamen sind frei waehlbar, ohne ihn koennte jeder Benutzer mit einem
+     * Token {@code agent-chef} als chef erscheinen (Review fable2).
+     */
+    static String autor(IApiTokenService.ApiTokenValidationResult v) {
+        String name = v.tokenName();
+        return name != null && name.startsWith("agent-") ? name + " (" + v.email() + ")" : v.email();
     }
 
     private IApiTokenService.ApiTokenValidationResult token(String auth, HttpServletRequest request) {
