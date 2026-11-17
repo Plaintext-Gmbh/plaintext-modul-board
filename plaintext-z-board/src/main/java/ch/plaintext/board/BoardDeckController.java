@@ -260,11 +260,13 @@ public class BoardDeckController {
 
     /**
      * Karte 2342 (Entscheid Daniel): die Agenten-Tokens ({@code agent-kimi1}, ...) laufen unter Daniels Benutzer;
-     * als Autor eines Kommentars zaehlt dann der Tokenname, sonst stuende ueberall Daniel.
+     * als Autor zaehlt dann der Tokenname, sonst stuende ueberall Daniel. Der Besitzer bleibt sichtbar
+     * ({@code agent-kimi1 (daniel@...)}): Tokennamen sind frei waehlbar, ohne ihn koennte jeder Benutzer mit einem
+     * Token {@code agent-chef} als chef erscheinen (Review fable2).
      */
     static String autor(IApiTokenService.ApiTokenValidationResult v) {
         String name = v.tokenName();
-        return name != null && name.startsWith("agent-") ? name : v.email();
+        return name != null && name.startsWith("agent-") ? name + " (" + v.email() + ")" : v.email();
     }
 
     private IApiTokenService.ApiTokenValidationResult token(String auth, HttpServletRequest request) {

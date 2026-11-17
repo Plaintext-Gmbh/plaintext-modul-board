@@ -12,7 +12,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Karte 2342: Agenten-Tokens laufen unter Daniels Benutzer. Ein Kommentar ueber ein {@code agent-*}-Token
- * traegt den Tokennamen als Autor, jedes andere Token weiter die E-Mail des Benutzers.
+ * traegt den Tokennamen samt Besitzer als Autor (Review fable2: Namen sind frei waehlbar), jedes andere
+ * Token weiter die E-Mail des Benutzers.
  */
 class BoardDeckControllerAutorTest {
 
@@ -22,8 +23,8 @@ class BoardDeckControllerAutorTest {
     }
 
     @Test
-    void agentTokenSchreibtUnterSeinemNamen() {
-        assertEquals("agent-kimi1", BoardDeckController.autor(token("agent-kimi1")));
+    void agentTokenSchreibtUnterSeinemNamenMitBesitzer() {
+        assertEquals("agent-kimi1 (daniel@example.ch)", BoardDeckController.autor(token("agent-kimi1")));
     }
 
     @Test
